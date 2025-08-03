@@ -512,6 +512,12 @@ def get_webdriver(merchant):
         geckodriver_path = absolute_path('program_files', 'geckodriver.exe')
     elif os.path.exists(absolute_path('program_files', 'geckodriver')):
         geckodriver_path = absolute_path('program_files', 'geckodriver')
+        # Ensure geckodriver is executable in Docker environment
+        if is_running_in_docker():
+            try:
+                os.chmod(geckodriver_path, 0o755)
+            except Exception as e:
+                LOGGER.warning(f'Could not set executable permissions on geckodriver: {e}')
     else:
         LOGGER.error(absolute_path('program_files', geckodriver_file) + ' does not exist. Download the latest version of geckodriver from https://github.com/mozilla/geckodriver/releases and extract it. Copy ' + geckodriver_file + ' to ' + absolute_path('program_files'))
         sys.exit(1)
@@ -521,9 +527,20 @@ def get_webdriver(merchant):
     # Create Firefox options for modern Selenium 4.x
     options = webdriver.FirefoxOptions()
     
-    # Set Firefox profile directory for cookies extension
-    profile_dir = absolute_path('program_files', 'selenium-cookies-extension', 'firefox-profile')
-    options.add_argument(f'--profile={profile_dir}')
+    # Force headless mode in Docker environment
+    if is_running_in_docker():
+        options.add_argument('--headless')
+        # Additional Docker-specific options
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--window-size=1920,1080')
+    
+    # Set Firefox profile directory for cookies extension (only if not in Docker)
+    if not is_running_in_docker():
+        profile_dir = absolute_path('program_files', 'selenium-cookies-extension', 'firefox-profile')
+        if os.path.exists(profile_dir):
+            options.add_argument(f'--profile={profile_dir}')
     
     # Prevent websites from detecting Selenium via evaluating `if (window.navigator.webdriver == true)` with JavaScript
     options.set_preference("dom.webdriver.enabled", False)
@@ -538,6 +555,13 @@ def get_webdriver(merchant):
     # Disable images and CSS for faster loading in headless mode
     options.set_preference("permissions.default.image", 2)
     options.set_preference("permissions.default.stylesheet", 2)
+    
+    # Additional preferences for Docker environment
+    if is_running_in_docker():
+        options.set_preference("browser.cache.disk.enable", False)
+        options.set_preference("browser.cache.memory.enable", False)
+        options.set_preference("browser.cache.offline.enable", False)
+        options.set_preference("network.http.use-cache", False)
 
     try:
         from selenium.webdriver.firefox.service import Service
@@ -550,10 +574,18 @@ def get_webdriver(merchant):
         LOGGER.error('There was a problem starting Firefox. Make sure the latest version of Firefox is installed. If installing/updating Firefox does not fix the issue, try downloading a newer or older version of geckodriver from https://github.com/mozilla/geckodriver/releases and extracting it. Copy ' + geckodriver_file + ' to ' + absolute_path('program_files'))
         WEB_DRIVER_LOCK.release()
         sys.exit(1)
+    except Exception as e:
+        LOGGER.error(f'Unexpected error starting Firefox: {str(e)}')
+        LOGGER.error('This might be due to missing Firefox installation or incompatible geckodriver version.')
+        WEB_DRIVER_LOCK.release()
+        sys.exit(1)
 
     # Randomize viewport size to help avoid Selenium detection (skip in Docker)
     if not is_running_in_docker():
         driver.set_window_size(random.randint(1050, 1350), random.randint(700, 1000))
+    else:
+        # Set a consistent window size for Docker environment
+        driver.set_window_size(1920, 1080)
 
     if merchant.use_cookies:
         restore_cookies(driver, merchant)
@@ -654,7 +686,7 @@ def plural(word, count):
 
 
 def update_check():
-    non_ssl_context = ssl.SSLContext()  # Having issues with Pyinstaller executables throwing SSL errors. Disabling SSL verification for GET operations to static GitHub pages.
+    non_ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # Having issues with Pyinstaller executables throwing SSL errors. Disabling SSL verification for GET operations to static GitHub pages.
 
     try:
         latest_version = int(urllib.request.urlopen('http://jakehilborn.github.io/debbit/updates/latest.txt', context=non_ssl_context).read())
@@ -802,9 +834,9 @@ if __name__ == '__main__':
 
     LOGGER.info('       __     __    __    _ __ ')
     LOGGER.info('  ____/ /__  / /_  / /_  (_) /_')
-    LOGGER.info(' / __  / _ \/ __ \/ __ \/ / __/')
+    LOGGER.info(' / __  / _ \\/ __ \\/ __ \\/ / __/')
     LOGGER.info('/ /_/ /  __/ /_/ / /_/ / / /_  ')
-    LOGGER.info('\__,_/\___/_.___/_.___/_/\__/  ' + VERSION)
+    LOGGER.info('\\__,_/\\___/_.___/_.___/_/\\__/  ' + VERSION)
     LOGGER.info('')
 
     config_to_open = None

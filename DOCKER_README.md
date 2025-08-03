@@ -60,7 +60,7 @@ This repository includes GitHub Actions that automatically build and push Docker
 Once set up, every push to the master branch will:
 - Build the Docker image
 - Push it to `charlesz54/debbit` on Docker Hub
-- Tag it with branch name, commit SHA, and semantic versions
+- Tag it with `latest` and semantic versions
 
 ### Using the Published Image
 
