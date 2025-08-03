@@ -686,52 +686,9 @@ def persist_cookies(driver, merchant):
         os.remove(absolute_path('program_files', 'cookies', merchant.id))
 
 
-def get_otp_input(prompt_text, merchant_id=None):
-    """
-    Get OTP input from various sources:
-    1. Interactive input (if not in Docker)
-    2. Docker command-line interface (if in Docker)
-    """
-    # If in Docker, provide command-line interface
-    if is_running_in_docker():
-        LOGGER.info("=" * 60)
-        LOGGER.info("OTP REQUIRED - DOCKER CONTAINER")
-        LOGGER.info("=" * 60)
-        LOGGER.info(f"OTP needed for: {prompt_text}")
-        if merchant_id:
-            LOGGER.info(f"Merchant ID: {merchant_id}")
-        LOGGER.info("")
-        LOGGER.info("To provide the OTP, run this command in your terminal:")
-        LOGGER.info("")
-        LOGGER.info(f"docker exec -it $(docker ps -q --filter ancestor=debbit) python3 -c \"import debbit; debbit.provide_otp('{merchant_id or 'default'}', input('Enter OTP: '))\"")
-        LOGGER.info("")
-        LOGGER.info("Or use this simpler command:")
-        LOGGER.info(f"docker exec -it $(docker ps -q --filter ancestor=debbit) bash -c 'echo \"Enter OTP: \" && read otp && python3 -c \"import debbit; debbit.provide_otp(\\\"{merchant_id or 'default'}\\\", \\\"$otp\\\")\"'")
-        LOGGER.info("")
-        LOGGER.info("Or use the helper script:")
-        LOGGER.info(f"./provide_otp.sh debbit {merchant_id or 'default'}")
-        LOGGER.info("")
-        LOGGER.info("Waiting for OTP...")
-        
-        # Wait for OTP to be provided
-        while True:
-            try:
-                # Check if OTP file exists (created by provide_otp function)
-                otp_file = f"/tmp/debbit_otp_{merchant_id or 'default'}"
-                if os.path.exists(otp_file):
-                    with open(otp_file, 'r') as f:
-                        otp = f.read().strip()
-                    os.remove(otp_file)  # Clean up
-                    LOGGER.info("OTP received, proceeding...")
-                    return otp
-                time.sleep(1)
-            except KeyboardInterrupt:
-                LOGGER.error("OTP input interrupted by user")
-                raise Exception("OTP input interrupted")
-    
-    # Fall back to interactive input (only in non-Docker environments)
-    LOGGER.info(prompt_text)
-    return input()
+def is_running_in_docker():
+    """Check if the application is running inside a Docker container"""
+    return os.path.exists('/.dockerenv')
 
 
 def provide_otp(merchant_id, otp_code):
@@ -742,11 +699,6 @@ def provide_otp(merchant_id, otp_code):
     with open(otp_file, 'w') as f:
         f.write(otp_code)
     LOGGER.info(f"OTP provided for {merchant_id}")
-
-
-def is_running_in_docker():
-    """Check if the application is running inside a Docker container"""
-    return os.path.exists('/.dockerenv')
 
 def absolute_path(*rel_paths):  # works cross platform when running source script or Pyinstaller binary
     script_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath('__file__')
