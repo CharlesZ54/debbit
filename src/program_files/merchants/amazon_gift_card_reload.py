@@ -142,8 +142,7 @@ def web_automation(driver, merchant, amount):
 
             sent_to_text = driver.find_element(By.XPATH, "//*[contains(text(),'phone number ending in')]").text
             LOGGER.info(sent_to_text)
-            LOGGER.info('Enter OTP here:')
-            otp = input()
+            otp = get_otp_input('Enter OTP here:', merchant.id)
             driver.find_element(By.ID, 'auth-mfa-otpcode').send_keys(otp)
             time.sleep(1 + random.random() * 2)
             driver.find_element(By.ID, 'auth-signin-button').click()
@@ -175,8 +174,7 @@ def web_automation(driver, merchant, amount):
                 WebDriverWait(driver, 5).until(expected_conditions.element_to_be_clickable((By.XPATH, "//*[contains(text(),'Enter OTP')]")))
                 sent_to_text = driver.find_element(By.XPATH, "//*[contains(text(),'@')]").text
                 LOGGER.info(sent_to_text)
-                LOGGER.info('Enter OTP here:')
-                otp = input()
+                otp = get_otp_input('Enter OTP here:', merchant.id)
                 # Try to find the OTP input field more specifically
                 try:
                     # Look for OTP input field with more specific selectors

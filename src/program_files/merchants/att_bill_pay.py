@@ -123,8 +123,7 @@ def handle_mfa_code_flow(driver):
                 LOGGER.info('Choose a multi-factor authentication option.')
                 for k, v in mfa_options.items():
                     LOGGER.info('    ' + str(k) + ' - ' + v)
-                LOGGER.info('Type a number 1-9 and then hit enter: ')
-                user_mfa_choice_input = input()    # TODO put timeout around this
+                user_mfa_choice_input = get_otp_input('Type a number 1-9 and then hit enter: ', merchant.id)
                 user_mfa_choice_index = ''.join([c for c in user_mfa_choice_input if c.isdigit()])  # sanitize input to remove all non digit characters
                 driver.find_element_by_id('m' + user_mfa_choice_index + 'label').click()
                 time.sleep(1 + random.random() * 2)
@@ -132,8 +131,7 @@ def handle_mfa_code_flow(driver):
             time.sleep(1 + random.random() * 2)
             driver.find_element_by_id("submitDest").click()
             WebDriverWait(driver, 20).until(expected_conditions.element_to_be_clickable((By.ID, "codeValue")))
-            LOGGER.info('Enter OTP here: ')
-            otp = input()  # TODO put timeout around this
+            otp = get_otp_input('Enter OTP here: ', merchant.id)
 
             elem = driver.find_element_by_id("codeValue")
             elem.send_keys(otp)

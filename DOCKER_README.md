@@ -118,6 +118,27 @@ docker stop debbit && docker rm debbit
 docker run -d --name debbit -v $(pwd)/data:/app/data debbit
 ```
 
+### OTP (One-Time Password) Handling
+
+When the container encounters an OTP prompt, it will pause and provide instructions for providing the OTP:
+
+1. **Using the helper script (recommended):**
+   ```bash
+   ./provide_otp.sh debbit merchant_id 123456
+   ```
+
+2. **Using docker exec directly:**
+   ```bash
+   docker exec -it debbit python3 -c "import debbit; debbit.provide_otp('merchant_id', '123456')"
+   ```
+
+3. **Using interactive docker exec:**
+   ```bash
+   docker exec -it debbit bash -c 'echo "Enter OTP: " && read otp && python3 -c "import debbit; debbit.provide_otp(\"merchant_id\", \"$otp\")"'
+   ```
+
+**Note:** Replace `merchant_id` with the actual merchant identifier (e.g., `amazon_gift_card_reload`) and `123456` with the actual OTP code.
+
 ### Permission issues
 Make sure the mounted directories have proper permissions:
 ```bash
