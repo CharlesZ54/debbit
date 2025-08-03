@@ -14,41 +14,34 @@ This Docker setup allows you to run debbit in a containerized environment using 
    nano data/config.txt  # or use your preferred editor
    ```
 
-3. **Run with docker-compose:**
+3. **Build the image:**
    ```bash
-   docker-compose up -d
+   docker build -t debbit .
    ```
 
-4. **View logs:**
+4. **Run the container:**
    ```bash
-   docker-compose logs -f
+   docker run -d --name debbit -v $(pwd)/data:/app/data debbit
    ```
 
-5. **Stop the container:**
+5. **View logs:**
    ```bash
-   docker-compose down
+   docker logs -f debbit
    ```
 
-## Manual Docker Commands
+6. **Stop the container:**
+   ```bash
+   docker stop debbit && docker rm debbit
+   ```
 
-If you prefer to use Docker directly:
+## One-Time Run
+
+For testing or one-time execution:
 
 ```bash
-# Build the image
+# Build and run once
 docker build -t debbit .
-
-# Run the container
-docker run -d \
-  --name debbit \
-  -v $(pwd)/data:/app/data \
-  debbit
-
-# View logs
-docker logs -f debbit
-
-# Stop the container
-docker stop debbit
-docker rm debbit
+docker run --rm -v $(pwd)/data:/app/data debbit
 ```
 
 ## Configuration
@@ -75,14 +68,14 @@ The container expects a `data/config.txt` file in the current directory. The set
 ### Container won't start
 Check the logs:
 ```bash
-docker-compose logs
+docker logs debbit
 ```
 
 ### Firefox issues
 The container uses Xvfb for headless Firefox. If you encounter display issues, try:
 ```bash
-docker-compose down
-docker-compose up --force-recreate
+docker stop debbit && docker rm debbit
+docker run -d --name debbit -v $(pwd)/data:/app/data debbit
 ```
 
 ### Permission issues
