@@ -35,6 +35,45 @@ This Docker setup allows you to run debbit in a containerized environment using 
    docker stop debbit && docker rm debbit
    ```
 
+## GitHub Actions & Docker Hub
+
+This repository includes GitHub Actions that automatically build and push Docker images to Docker Hub when you commit to the master branch.
+
+### Setup Docker Hub Integration
+
+1. **Create a Docker Hub account** (if you don't have one)
+2. **Create a Docker Hub repository** named `charlesz54/debbit`
+3. **Generate a Docker Hub access token:**
+   - Go to Docker Hub → Account Settings → Security
+   - Click "New Access Token"
+   - Give it a name like "GitHub Actions"
+   - Copy the token
+
+4. **Add GitHub Secrets:**
+   - Go to your GitHub repository → Settings → Secrets and variables → Actions
+   - Add these secrets:
+     - `DOCKERHUB_USERNAME`: Your Docker Hub username (`charlesz54`)
+     - `DOCKERHUB_TOKEN`: Your Docker Hub access token
+
+### Automatic Builds
+
+Once set up, every push to the master branch will:
+- Build the Docker image
+- Push it to `charlesz54/debbit` on Docker Hub
+- Tag it with branch name, commit SHA, and semantic versions
+
+### Using the Published Image
+
+After the GitHub Action runs, you can pull and run the image directly:
+
+```bash
+# Pull the latest image
+docker pull charlesz54/debbit:latest
+
+# Run without building locally
+docker run -d --name debbit -v $(pwd)/data:/app/data charlesz54/debbit:latest
+```
+
 ## One-Time Run
 
 For testing or one-time execution:
