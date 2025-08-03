@@ -516,8 +516,16 @@ def get_webdriver(merchant):
         if is_running_in_docker():
             try:
                 os.chmod(geckodriver_path, 0o755)
+                # Verify geckodriver is working
+                import subprocess
+                result = subprocess.run([geckodriver_path, '--version'], 
+                                      capture_output=True, text=True, timeout=10)
+                if result.returncode == 0:
+                    LOGGER.info(f'Geckodriver version: {result.stdout.strip()}')
+                else:
+                    LOGGER.warning(f'Geckodriver test failed: {result.stderr}')
             except Exception as e:
-                LOGGER.warning(f'Could not set executable permissions on geckodriver: {e}')
+                LOGGER.warning(f'Could not verify geckodriver: {e}')
     else:
         LOGGER.error(absolute_path('program_files', geckodriver_file) + ' does not exist. Download the latest version of geckodriver from https://github.com/mozilla/geckodriver/releases and extract it. Copy ' + geckodriver_file + ' to ' + absolute_path('program_files'))
         sys.exit(1)
@@ -576,7 +584,15 @@ def get_webdriver(merchant):
         sys.exit(1)
     except Exception as e:
         LOGGER.error(f'Unexpected error starting Firefox: {str(e)}')
-        LOGGER.error('This might be due to missing Firefox installation or incompatible geckodriver version.')
+        if is_running_in_docker():
+            LOGGER.error('Docker environment detected. This might be due to:')
+            LOGGER.error('1. Missing system dependencies in the container')
+            LOGGER.error('2. Firefox/geckodriver compatibility issues')
+            LOGGER.error('3. Memory constraints in the container')
+            LOGGER.error('4. Missing X11 libraries')
+            LOGGER.error('Try rebuilding the container with: docker build --no-cache -t debbit .')
+        else:
+            LOGGER.error('This might be due to missing Firefox installation or incompatible geckodriver version.')
         WEB_DRIVER_LOCK.release()
         sys.exit(1)
 
