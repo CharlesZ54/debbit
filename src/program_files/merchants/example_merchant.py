@@ -35,17 +35,17 @@ def web_automation(driver, merchant, amount):
         time.sleep(2)  # pause to let user watch what's happening - not necessary for real merchants
 
         try:  # some websites will have the username auto-filled in due to a previous login
-            driver.find_element_by_id('username').send_keys(merchant.usr)
+            driver.find_element(By.ID, 'username').send_keys(merchant.usr)
         except ElementNotInteractableException:
             pass
 
         time.sleep(2)  # pause to let user watch what's happening - not necessary for real merchants
-        driver.find_element_by_id('password').send_keys(merchant.usr)
+        driver.find_element(By.ID, 'password').send_keys(merchant.usr)
         time.sleep(2)  # pause to let user watch what's happening - not necessary for real merchants
-        driver.find_element_by_id('login').click()
+        driver.find_element(By.ID, 'login').click()
         WebDriverWait(driver, 30).until(expected_conditions.element_to_be_clickable((By.ID, 'submit-payment')))
 
-    cur_balance = driver.find_element_by_xpath("//span[contains(text(), '$')]").text
+    cur_balance = driver.find_element(By.XPATH, "//span[contains(text(), '$')]").text
     if utils.str_to_cents(cur_balance) == 0:
         LOGGER.error('example_merchant balance is zero, will try again later.')
         return Result.skipped
@@ -53,11 +53,11 @@ def web_automation(driver, merchant, amount):
         amount = utils.str_to_cents(cur_balance)
 
     time.sleep(2)  # pause to let user watch what's happening - not necessary for real merchants
-    driver.find_element_by_xpath("//*[contains(text(), 'card ending in " + merchant.card + "')]").click()
+    driver.find_element(By.XPATH, "//*[contains(text(), 'card ending in " + merchant.card + "')]").click()
     time.sleep(2)  # pause to let user watch what's happening - not necessary for real merchants
-    driver.find_element_by_id('amount').send_keys(utils.cents_to_str(amount))
+    driver.find_element(By.ID, 'amount').send_keys(utils.cents_to_str(amount))
     time.sleep(2)  # pause to let user watch what's happening - not necessary for real merchants
-    driver.find_element_by_id('submit-payment').click()
+    driver.find_element(By.ID, 'submit-payment').click()
 
     try:
         WebDriverWait(driver, 30).until(expected_conditions.presence_of_element_located((By.XPATH, "//*[contains(text(),'Thank you!')]")))

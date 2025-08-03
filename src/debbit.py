@@ -24,6 +24,7 @@ import coverage
 import yaml  # PyYAML
 from selenium import webdriver
 from selenium.common.exceptions import SessionNotCreatedException
+from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 
 from result import Result
@@ -507,15 +508,17 @@ def get_webdriver(merchant):
     options = Options()
     options.headless = CONFIG.hide_web_browser
     profile = webdriver.FirefoxProfile(absolute_path('program_files', 'selenium-cookies-extension', 'firefox-profile'))
+    # Note: firefox_profile is deprecated but still needed for the cookies extension
 
     # Prevent websites from detecting Selenium via evaluating `if (window.navigator.webdriver == true)` with JavaScript
     profile.set_preference("dom.webdriver.enabled", False)
     profile.set_preference('useAutomationExtension', False)
 
     try:
+        from selenium.webdriver.firefox.service import Service
+        service = Service(executable_path=geckodriver_path, log_path=os.devnull)
         driver = webdriver.Firefox(options=options,
-                                 service_log_path=os.devnull,
-                                 executable_path=geckodriver_path,
+                                 service=service,
                                  firefox_profile=profile)
 
     except SessionNotCreatedException as e:
@@ -574,7 +577,7 @@ def restore_cookies(driver, merchant):
 
         seconds = 30
         for i in range(seconds * 10):
-            if driver.find_element_by_id('status').text == 'done':
+            if driver.find_element(By.ID, 'status').text == 'done':
                 return
             time.sleep(0.1)
         error_msg = 'Unable to restore cookies after ' + str(seconds) + ' seconds'
@@ -591,14 +594,14 @@ def persist_cookies(driver, merchant):
 
     seconds = 30
     for i in range(seconds * 10):
-        if driver.find_element_by_id('status').text == 'dom-ready':
+        if driver.find_element(By.ID, 'status').text == 'dom-ready':
             break
         if i == seconds * 10 - 1:
             LOGGER.error('Unable to restore cookies after ' + str(seconds) + ' seconds - proceeding without restoring cookies')
             return
         time.sleep(0.1)
 
-    cookies = driver.find_element_by_id('content').text
+    cookies = driver.find_element(By.ID, 'content').text
 
     if not os.path.exists(absolute_path('program_files', 'cookies')):
         os.mkdir(absolute_path('program_files', 'cookies'))
