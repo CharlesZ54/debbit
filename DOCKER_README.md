@@ -4,13 +4,14 @@ This Docker setup allows you to run debbit in a containerized environment using 
 
 ## Quick Start
 
-1. **Setup the environment:**
+1. **Create the data directory:**
    ```bash
-   ./setup-docker.sh
+   mkdir -p data/state
    ```
 
-2. **Edit the configuration:**
+2. **Create configuration file:**
    ```bash
+   cp src/sample_config.txt data/config.txt
    nano data/config.txt  # or use your preferred editor
    ```
 
@@ -84,6 +85,8 @@ Make sure the mounted directories have proper permissions:
 chmod 755 data data/state
 chmod 644 data/config.txt
 ```
+
+**Note:** These permissions are automatically set when you create the directories and files.
 
 ### Configuration issues
 Verify your `data/config.txt` file is properly formatted and contains valid credentials.
