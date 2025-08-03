@@ -11,7 +11,7 @@ This Docker setup allows you to run debbit in a containerized environment using 
 
 2. **Edit the configuration:**
    ```bash
-   nano config.txt  # or use your preferred editor
+   nano data/config.txt  # or use your preferred editor
    ```
 
 3. **Run with docker-compose:**
@@ -40,10 +40,7 @@ docker build -t debbit .
 # Run the container
 docker run -d \
   --name debbit \
-  -v $(pwd)/config.txt:/app/config.txt:ro \
-  -v $(pwd)/cookies:/app/program_files/cookies \
-  -v $(pwd)/state:/app/program_files/state \
-  -v $(pwd)/logs:/app/program_files \
+  -v $(pwd)/data:/app/data \
   debbit
 
 # View logs
@@ -56,14 +53,13 @@ docker rm debbit
 
 ## Configuration
 
-The container expects a `config.txt` file in the current directory. The setup script will create this from the sample configuration if it doesn't exist.
+The container expects a `data/config.txt` file in the current directory. The setup script will create this from the sample configuration if it doesn't exist.
 
 ### Volume Mounts
 
-- `config.txt`: Your debbit configuration file (read-only)
-- `cookies/`: Directory for persistent browser cookies
-- `state/`: Directory for debbit state files
-- `logs/`: Directory for log files
+- `data/`: Single directory containing:
+  - `config.txt`: Your debbit configuration file
+  - `state/`: Directory for debbit state files
 
 ## Features
 
@@ -92,12 +88,12 @@ docker-compose up --force-recreate
 ### Permission issues
 Make sure the mounted directories have proper permissions:
 ```bash
-chmod 755 cookies state logs
-chmod 644 config.txt
+chmod 755 data data/state
+chmod 644 data/config.txt
 ```
 
 ### Configuration issues
-Verify your `config.txt` file is properly formatted and contains valid credentials.
+Verify your `data/config.txt` file is properly formatted and contains valid credentials.
 
 ## Building from Source
 

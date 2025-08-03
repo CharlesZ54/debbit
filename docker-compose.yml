@@ -5,14 +5,8 @@ services:
     build: .
     container_name: debbit
     volumes:
-      # Mount config file
-      - ./config.txt:/app/config.txt:ro
-      # Mount cookies directory for persistence
-      - ./cookies:/app/program_files/cookies
-      # Mount state directory for persistence
-      - ./state:/app/program_files/state
-      # Mount logs directory
-      - ./logs:/app/program_files
+      # Mount single data directory containing config.txt and state
+      - ./data:/app/data
     environment:
       - DISPLAY=:99
     # Run with Xvfb for headless Firefox

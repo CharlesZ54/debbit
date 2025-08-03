@@ -51,7 +51,12 @@ def main():
 
 def load_state(year, month):
     padded_month = '0' + str(month) if month < 10 else str(month)
-    filename = absolute_path('state', 'debbit_' + str(year) + '_' + padded_month + '.txt')
+    
+    # Use Docker data directory when running in Docker
+    if is_running_in_docker():
+        filename = absolute_path('data', 'state', 'debbit_' + str(year) + '_' + padded_month + '.txt')
+    else:
+        filename = absolute_path('state', 'debbit_' + str(year) + '_' + padded_month + '.txt')
 
     try:
         with open(filename, 'r', encoding='utf-8') as f:
@@ -246,11 +251,18 @@ def record_transaction(merchant_id, amount):
     now = datetime.now()
     LOGGER.info('Recording successful ' + merchant_id + ' purchase')
 
-    if not os.path.exists(absolute_path('state')):
-        os.mkdir(absolute_path('state'))
-
-    padded_month = '0' + str(now.month) if now.month < 10 else str(now.month)
-    filename = absolute_path('state', 'debbit_' + str(now.year) + '_' + padded_month + '.txt')
+    # Use Docker data directory when running in Docker
+    if is_running_in_docker():
+        state_dir = absolute_path('data', 'state')
+        if not os.path.exists(state_dir):
+            os.mkdir(state_dir)
+        padded_month = '0' + str(now.month) if now.month < 10 else str(now.month)
+        filename = absolute_path('data', 'state', 'debbit_' + str(now.year) + '_' + padded_month + '.txt')
+    else:
+        if not os.path.exists(absolute_path('state')):
+            os.mkdir(absolute_path('state'))
+        padded_month = '0' + str(now.month) if now.month < 10 else str(now.month)
+        filename = absolute_path('state', 'debbit_' + str(now.year) + '_' + padded_month + '.txt')
 
     STATE_WRITE_LOCK.acquire()
 
@@ -796,10 +808,20 @@ if __name__ == '__main__':
     LOGGER.info('')
 
     config_to_open = None
-    for config_file in ['config.yml', 'config.txt']:
-        if os.path.exists(absolute_path(config_file)):
-            config_to_open = config_file
-            break
+    
+    # Check Docker data directory first if running in Docker
+    if is_running_in_docker():
+        for config_file in ['data/config.yml', 'data/config.txt']:
+            if os.path.exists(absolute_path(config_file)):
+                config_to_open = config_file
+                break
+    
+    # Fall back to local directory if not found in Docker data directory
+    if config_to_open is None:
+        for config_file in ['config.yml', 'config.txt']:
+            if os.path.exists(absolute_path(config_file)):
+                config_to_open = config_file
+                break
 
     if config_to_open is None:
         LOGGER.error('Config file not found.')

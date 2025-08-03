@@ -40,7 +40,8 @@ COPY src/ ./
 
 # Create necessary directories
 RUN mkdir -p program_files/cookies \
-    && mkdir -p program_files/state
+    && mkdir -p program_files/state \
+    && mkdir -p data/state
 
 # Copy geckodriver to the expected location
 RUN cp /usr/local/bin/geckodriver program_files/geckodriver
