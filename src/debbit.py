@@ -505,21 +505,33 @@ def get_webdriver(merchant):
         sys.exit(1)
 
     WEB_DRIVER_LOCK.acquire()  # Only execute one purchase at a time so the console log messages don't inter mix
-    options = Options()
-    options.headless = CONFIG.hide_web_browser
-    profile = webdriver.FirefoxProfile(absolute_path('program_files', 'selenium-cookies-extension', 'firefox-profile'))
-    # Note: firefox_profile is deprecated but still needed for the cookies extension
-
+    
+    # Create Firefox options for modern Selenium 4.x
+    options = webdriver.FirefoxOptions()
+    
+    # Set Firefox profile directory for cookies extension
+    profile_dir = absolute_path('program_files', 'selenium-cookies-extension', 'firefox-profile')
+    options.add_argument(f'--profile={profile_dir}')
+    
     # Prevent websites from detecting Selenium via evaluating `if (window.navigator.webdriver == true)` with JavaScript
-    profile.set_preference("dom.webdriver.enabled", False)
-    profile.set_preference('useAutomationExtension', False)
+    options.set_preference("dom.webdriver.enabled", False)
+    options.set_preference('useAutomationExtension', False)
+    
+    # Additional options for headless operation
+    options.set_preference("browser.download.folderList", 2)
+    options.set_preference("browser.download.manager.showWhenStarting", False)
+    options.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/pdf")
+    options.set_preference("pdfjs.disabled", True)
+    
+    # Disable images and CSS for faster loading in headless mode
+    options.set_preference("permissions.default.image", 2)
+    options.set_preference("permissions.default.stylesheet", 2)
 
     try:
         from selenium.webdriver.firefox.service import Service
         service = Service(executable_path=geckodriver_path, log_path=os.devnull)
         driver = webdriver.Firefox(options=options,
-                                 service=service,
-                                 firefox_profile=profile)
+                                 service=service)
 
     except SessionNotCreatedException as e:
         LOGGER.error(str(e) + '\n')
@@ -527,8 +539,9 @@ def get_webdriver(merchant):
         WEB_DRIVER_LOCK.release()
         sys.exit(1)
 
-    # Randomize viewport size to help avoid Selenium detection
-    driver.set_window_size(random.randint(1050, 1350), random.randint(700, 1000))
+    # Randomize viewport size to help avoid Selenium detection (skip in Docker)
+    if not is_running_in_docker():
+        driver.set_window_size(random.randint(1050, 1350), random.randint(700, 1000))
 
     if merchant.use_cookies:
         restore_cookies(driver, merchant)
@@ -612,6 +625,10 @@ def persist_cookies(driver, merchant):
     if os.path.exists(absolute_path('program_files', 'cookies', merchant.id)):  # legacy v2.0 - v2.0.2 cookie format
         os.remove(absolute_path('program_files', 'cookies', merchant.id))
 
+
+def is_running_in_docker():
+    """Check if the application is running inside a Docker container"""
+    return os.path.exists('/.dockerenv')
 
 def absolute_path(*rel_paths):  # works cross platform when running source script or Pyinstaller binary
     script_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath('__file__')
@@ -730,7 +747,12 @@ class Config:
             sys.exit(1)
         self.mode = config.get('mode')
 
-        self.hide_web_browser = config.get('hide_web_browser')
+        # Force headless mode when running in Docker container
+        if is_running_in_docker():
+            self.hide_web_browser = True
+            LOGGER.info('Docker container detected - forcing headless mode')
+        else:
+            self.hide_web_browser = config.get('hide_web_browser')
 
         if config.get('notify_failure') == 'your.email@website.com':
             self.notify_failure = None

@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  debbit:
+    build: .
+    container_name: debbit
+    volumes:
+      # Mount config file
+      - ./config.txt:/app/config.txt:ro
+      # Mount cookies directory for persistence
+      - ./cookies:/app/program_files/cookies
+      # Mount state directory for persistence
+      - ./state:/app/program_files/state
+      # Mount logs directory
+      - ./logs:/app/program_files
+    environment:
+      - DISPLAY=:99
+    # Run with Xvfb for headless Firefox
+    command: >
+      sh -c "
+        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        sleep 2
+        python3 debbit.py
+      "
+    restart: unless-stopped
+    # Add healthcheck
+    healthcheck:
+      test: ["CMD", "pgrep", "python3"]
+      interval: 30s
+      timeout: 10s
+      retries: 3 

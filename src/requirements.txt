@@ -1,0 +1,4 @@
+pyyaml>=6.0
+selenium>=4.0.0
+sendgrid>=6.0.0
+coverage==5.3.1 

@@ -1,0 +1,49 @@
+# Git files
+.git
+.gitignore
+
+# Documentation
+docs/
+README.md
+LICENSE
+
+# Release files
+release_files/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+test_*.py
+*_test.py
+
+# Coverage files
+.coverage
+htmlcov/
+
+# State and cookies (will be created at runtime)
+src/program_files/cookies/
+src/program_files/state/
+src/program_files/debbit_log.log
+
+# Existing geckodriver (we'll install our own)
+src/program_files/geckodriver 
